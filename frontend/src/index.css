@@ -10,6 +10,92 @@ body {
   min-height: 100vh;
 }
 
+/* ---- Layout for multi-session UI ---- */
+.appContainer {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e8e8e8;
+  width: 220px;
+  transition: width 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar.closed {
+  width: 40px; /* just show collapse button */
+}
+
+.collapseBtn {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 1.2rem;
+  color: #888;
+  width: 100%;
+  text-align: right;
+}
+
+.newChatBtn {
+  margin: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  background: #f7f7f8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.newChatBtn:hover {
+  background: #eeeeef;
+}
+
+.sessionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sessionList li {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.sessionList li:hover {
+  background: #f5f5f6;
+}
+
+.sessionList li.active {
+  background: #e8e8ea;
+  font-weight: 600;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
 /* ---- Layout ---- */
 .chat {
   flex: 1;
@@ -25,6 +111,7 @@ body {
   top: 0;
   z-index: 5; /* stay on top of message bubbles */
   background: #f7f7f8; /* same as page to avoid transparency when overlapping */
+  margin: 0 0 1rem;
 }
 
 /* Messages scroll area */

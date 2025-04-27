@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { nanoid } from "nanoid";
 import { Message, chatStream } from "./api";
 
-export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+export interface ChatProps {
+  sessionId: string;
+  messages: Message[];
+  setMessages: (msgs: Message[]) => void;
+}
+
+export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   const [input, setInput] = useState("");
   const streaming = useRef(false);
-
-  // stable session id for the lifetime of this component
-  const sessionIdRef = useRef<string>(nanoid());
 
   // refs for scrolling --------------------------------------------------
   const msgsContainerRef = useRef<HTMLDivElement>(null);
@@ -21,8 +22,8 @@ export default function Chat() {
     if (!content || streaming.current) return;
 
     const userMessage: Message = { role: "user", content };
-    const nextMessages: Message[] = [...messages, userMessage];
-    setMessages(nextMessages);
+    const baseMessages = [...messages, userMessage];
+    setMessages(baseMessages);
     setInput("");
 
     // ensure we auto-scroll for the user's new message
@@ -32,10 +33,10 @@ export default function Chat() {
     let assistantContent = "";
 
     try {
-      for await (const chunk of chatStream(sessionIdRef.current, userMessage)) {
+      for await (const chunk of chatStream(sessionId, userMessage)) {
         assistantContent += chunk;
         setMessages([
-          ...nextMessages,
+          ...baseMessages,
           { role: "assistant", content: assistantContent },
         ]);
       }
