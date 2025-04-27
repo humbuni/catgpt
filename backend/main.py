@@ -27,6 +27,14 @@ from pydantic import BaseModel
 
 from starlette.responses import StreamingResponse
 
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
+
 # ---------------------------------------------------------------------------
 # FastAPI app
 # ---------------------------------------------------------------------------
@@ -45,6 +53,10 @@ class ChatRequest(BaseModel):
 
 
 app = FastAPI(title="CatGPT Backend")
+@app.on_event("startup")
+async def startup_event():
+    """Log on application startup."""
+    logger.info("Starting CatGPT Backend")
 
 # ---------------------------------------------------------------------------
 # In-memory session store
@@ -80,6 +92,11 @@ async def chat(req: ChatRequest):
     message in the session history.
     """
 
+    # Log incoming request
+    logger.info(
+        f"Received /chat request: session_id={req.session_id!r}, content={req.message.get('content')!r},"
+        f" role={req.message.get('role', 'user')!r}"
+    )
     session_id = req.session_id.strip()
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id cannot be empty")
@@ -99,18 +116,22 @@ async def chat(req: ChatRequest):
 
     # Retrieve the stored history (if any) for this session (no system prompt).
     history = sessions.get(session_id, [])
+    logger.debug(f"Session {session_id} history length: {len(history)}")
 
     # Build input for the agent SDK (history + latest user message).
     agent_input: List[dict[str, str]] = [*history, user_message]
 
+    # Invoke the Conductor in streaming mode
+    logger.info(f"Calling Conductor.run_stream with {len(agent_input)} messages for session {session_id}")
     try:
         result = _conductor.run_stream(agent_input)
     except Exception as exc:  # pragma: no cover – catch any SDK error
+        logger.exception("Conductor.run_stream failed")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     async def event_generator():
         """Stream deltas from the Agent SDK as Server-Sent Events."""
-
+        logger.info(f"Streaming events for session {session_id}")
         async for event in result.stream_events():
             # We only care about raw response delta events.
             if (
@@ -121,8 +142,11 @@ async def chat(req: ChatRequest):
                 if delta:
                     yield f"data:{delta}\n\n"
 
-        # After the stream is complete, persist the full conversation for the session.
+        # After the stream is complete, persist the full conversation
         sessions[session_id] = result.to_input_list()
+        logger.info(
+            f"Persisted {len(sessions[session_id])} messages for session {session_id}"
+        )
 
         # Notify client we're done.
         yield "data:[DONE]\n\n"

@@ -9,15 +9,15 @@ from __future__ import annotations
 from typing import Dict, List
 from agents import Agent, Runner, RunResultStreaming
 
-import mlflow
+# import mlflow
 
 # Enable auto-tracing for OpenAI
 # server needs to be started: mlflow server --host 127.0.0.1 --port 8080
-mlflow.openai.autolog()
+# mlflow.openai.autolog()
 
 # Optional: Set a tracking URI and an experiment
-mlflow.set_tracking_uri("http://localhost:8080")
-mlflow.set_experiment("catgpt")
+# mlflow.set_tracking_uri("http://localhost:8080")
+# mlflow.set_experiment("catgpt")
 
 class Conductor:
     """Create and run a CatGPT Agent using the Agents SDK."""
