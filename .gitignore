@@ -2,7 +2,9 @@
 venv/
 node_modules/
 dist/
+mlruns/
+mlartifacts/
 .env
 /dist
 /build
-**/__pycache__
+__pycache__/

@@ -6,13 +6,18 @@ environment-dependent configuration (API key, model, system prompt).
 
 from __future__ import annotations
 
-import os
 from typing import Dict, List
+from agents import Agent, Runner, RunResultStreaming
 
-import dotenv
-import openai
-from agents import Agent, Runner, RunResultStreaming  # type: ignore
+import mlflow
 
+# Enable auto-tracing for OpenAI
+# server needs to be started: mlflow server --host 127.0.0.1 --port 8080
+mlflow.openai.autolog()
+
+# Optional: Set a tracking URI and an experiment
+mlflow.set_tracking_uri("http://localhost:8080")
+mlflow.set_experiment("catgpt")
 
 class Conductor:
     """Create and run a CatGPT Agent using the Agents SDK."""
@@ -23,30 +28,27 @@ class Conductor:
         system_prompt: str | None = None,
         model_name: str | None = None,
     ) -> None:
-        # ---------------------------------------------------------------------
-        # Load env only once per process. Safe to call multiple times because
-        # dotenv will silently ignore if already loaded.
-        # ---------------------------------------------------------------------
-        dotenv.load_dotenv()
 
-        # API key --------------------------------------------------------------
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        if not openai.api_key:
-            raise RuntimeError("OPENAI_API_KEY environment variable missing")
-
-        # Prompt & model -------------------------------------------------------
-        self.system_prompt: str = system_prompt or os.getenv(
-            "CAT_SYSTEM_PROMPT",
-            "You are CatGPT, a witty cat that speaks in short, playful sentences.",
+        history_tutor_agent = Agent(
+            name="History Tutor",
+            handoff_description="Specialist agent for historical questions",
+            instructions="You provide assistance with historical queries. Explain important events and context clearly.",
+            model = "gpt-4.1"
         )
 
-        self.model_name: str = model_name or os.getenv("OPENAI_MODEL", "gpt-4.1")
+        math_tutor_agent = Agent(
+            name="Math Tutor",
+            handoff_description="Specialist agent for math questions",
+            instructions="You provide help with math problems. Explain your reasoning at each step and include examples",
+            model = "gpt-4.1"
+        )
 
         # Create the Agent immediately (no lazy init).
         self.agent: Agent = Agent(
             name="catgpt",
-            instructions=self.system_prompt,
-            model=self.model_name,
+            instructions = "You determine which agent to use based on the user's homework question",
+            model = "gpt-4.1",
+            handoffs = [history_tutor_agent, math_tutor_agent],
         )
 
     # ---------------------------------------------------------------------
