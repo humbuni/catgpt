@@ -7,37 +7,25 @@ back to the caller as Server-Sent Events.
 
 from __future__ import annotations
 
-import os
-
-import dotenv
-import openai
 from typing import Dict, List
 
-# Agent SDK
 from openai.types.responses import ResponseTextDeltaEvent
-from agents import Agent, Runner
+
+# Conductor class wraps the Agents SDK.
+# Attempt relative import when running as a package (e.g., `uvicorn backend.main:app`).
+# Fallback to a same-directory import when executing directly.
+try:
+    from .conductor import Conductor  # type: ignore
+except ImportError:  # pragma: no cover
+    from conductor import Conductor  # type: ignore
+
+# Single, long-lived instance reused across requests.
+_conductor = Conductor()
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
 from starlette.responses import StreamingResponse
-
-# ---------------------------------------------------------------------------
-# Environment
-# ---------------------------------------------------------------------------
-
-dotenv.load_dotenv()
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
-if not openai.api_key:
-    raise RuntimeError("OPENAI_API_KEY environment variable missing")
-
-SYSTEM_PROMPT = os.getenv(
-    "CAT_SYSTEM_PROMPT",
-    "You are CatGPT, a witty cat that speaks in short, playful sentences.",
-)
-
-# Model to use – defaults to GPT-4.1 but can be overridden via env var.
-MODEL_NAME = os.getenv("OPENAI_MODEL", "gpt-4.1")
 
 # ---------------------------------------------------------------------------
 # FastAPI app
@@ -115,11 +103,8 @@ async def chat(req: ChatRequest):
     # Build input for the agent SDK (history + latest user message).
     agent_input: List[dict[str, str]] = [*history, user_message]
 
-    # Agent instance – created lazily so that env vars are already loaded.
-    agent = Agent(name="catgpt", instructions=SYSTEM_PROMPT, model=MODEL_NAME)
-
     try:
-        result = Runner.run_streamed(agent, input=agent_input)
+        result = _conductor.run_stream(agent_input)
     except Exception as exc:  # pragma: no cover – catch any SDK error
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
