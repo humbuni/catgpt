@@ -13,10 +13,9 @@ import dotenv
 import openai
 from typing import Dict, List
 
-# Use the async client provided by the OpenAI Python SDK v1+
-# Pass the already validated API key explicitly so that the async client
-# works even if the environment variable is later unset.
-client = openai.AsyncOpenAI(api_key=openai.api_key)
+# Agent SDK
+from openai.types.responses import ResponseTextDeltaEvent
+from agents import Agent, Runner
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -78,22 +77,6 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-async def _stream_openai(stream):
-    """Translate the OpenAI SDK's async generator into SSE bytes."""
-
-    async for chunk in stream:
-        delta = chunk.choices[0].delta.content  # type: ignore[attr-defined]
-        if delta:
-            yield f"data:{delta}\n\n"
-
-    yield "data:[DONE]\n\n"
-
-
-# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
@@ -126,43 +109,37 @@ async def chat(req: ChatRequest):
     if user_message["role"] not in {"user", "assistant"}:
         raise HTTPException(status_code=400, detail="invalid role")
 
-    # Retrieve the stored history (if any) for this session.
+    # Retrieve the stored history (if any) for this session (no system prompt).
     history = sessions.get(session_id, [])
 
-    # Build the message list we send to OpenAI: system prompt + history + new message
-    full_messages: list[dict[str, str]] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        *history,
-        user_message,
-    ]
+    # Build input for the agent SDK (history + latest user message).
+    agent_input: List[dict[str, str]] = [*history, user_message]
+
+    # Agent instance – created lazily so that env vars are already loaded.
+    agent = Agent(name="catgpt", instructions=SYSTEM_PROMPT, model=MODEL_NAME)
 
     try:
-        stream = await client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=full_messages,
-            stream=True,
-            temperature=0.7,
-        )
-    except openai.OpenAIError as exc:  # type: ignore[attr-defined]
+        result = Runner.run_streamed(agent, input=agent_input)
+    except Exception as exc:  # pragma: no cover – catch any SDK error
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     async def event_generator():
-        """Async generator that streams chunks and finally updates the session."""
+        """Stream deltas from the Agent SDK as Server-Sent Events."""
 
-        assistant_content = ""
-        async for chunk in stream:
-            delta = chunk.choices[0].delta.content  # type: ignore[attr-defined]
-            if delta:
-                assistant_content += delta
-                yield f"data:{delta}\n\n"
+        async for event in result.stream_events():
+            # We only care about raw response delta events.
+            if (
+                event.type == "raw_response_event"
+                and isinstance(event.data, ResponseTextDeltaEvent)
+            ):
+                delta: str | None = event.data.delta  # type: ignore[attr-defined]
+                if delta:
+                    yield f"data:{delta}\n\n"
 
-        # Conversation finished – update session with both user and assistant messages.
-        sessions[session_id] = [
-            *history,
-            user_message,
-            {"role": "assistant", "content": assistant_content},
-        ]
+        # After the stream is complete, persist the full conversation for the session.
+        sessions[session_id] = result.to_input_list()
 
+        # Notify client we're done.
         yield "data:[DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
