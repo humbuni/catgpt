@@ -12,7 +12,8 @@ export default function App() {
         height: "100vh",
       }}
     >
-      <h1 style={{ margin: "0 0 1rem" }}>🐱 CatGPT</h1>
+      {/* sticky header */}
+      <h1 className="header" style={{ margin: "0 0 1rem" }}>🐱 CatGPT</h1>
       <Chat />
     </div>
   );
