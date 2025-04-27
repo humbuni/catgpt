@@ -6,11 +6,11 @@ export interface Message {
   content: string;
 }
 
-export async function* chatStream(messages: Message[]) {
+export async function* chatStream(sessionId: string, message: Message) {
   const res = await fetch(`${BASE_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ session_id: sessionId, message }),
   });
 
   if (!res.ok || !res.body) {

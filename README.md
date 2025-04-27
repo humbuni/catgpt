@@ -4,7 +4,7 @@ CatGPT is a tiny open-source clone of ChatGPT that answers every prompt with a p
 
 This repository contains **two** separate apps that live side-by-side:
 
-1. **backend/** – Python + FastAPI service that proxies requests to OpenAI’s Chat Completion API and streams the reply back to the browser as Server-Sent Events (SSE).
+1. **backend/** – Python + FastAPI service that proxies requests to OpenAI’s Chat Completion API, keeps per-session chat history **in memory**, and streams replies back to the browser as Server-Sent Events (SSE).
 2. **frontend/** – React + Vite web client that provides the chat interface and renders the streamed tokens in real-time.
 
 > Everything is 100 % MIT-licensed—feel free to fork and adapt.
@@ -67,10 +67,11 @@ catgpt/
 
 ## 4. How streaming works
 
-1. The browser sends `POST /chat` with the full message history.
-2. `backend/main.py` forwards the messages (plus a system prompt that turns the model into a cat 🐱) to `openai.chat.completions.create(stream=True)`.
-3. As tokens arrive, the backend converts them to Server-Sent Events (`data:<token>\n\n`).
-4. The React app consumes the **ReadableStream**, splits `\n\n`, and appends the text to the UI for that satisfying “typewriter effect.”
+1. The browser creates a random `sessionId` on first load.  For every user prompt it now sends **only the latest user message** together with that `sessionId` → `POST /chat`.
+2. The FastAPI server looks up the conversation history it keeps **in memory** for that session, appends the new user message, adds the system prompt, and calls `openai.chat.completions.create(stream=True)`.
+3. While tokens stream back, the backend forwards them as Server-Sent Events (`data:<token>\n\n`).
+4. Once the answer is finished the server stores the assistant message in the session so the next turn has full context.
+5. The React app consumes the **ReadableStream**, splits `\n\n`, and appends the text to the UI for that satisfying “typewriter effect.”
 
 If you prefer WebSockets you can swap transports—the OpenAI SDK gives you an async generator that can be bridged to anything.
 
