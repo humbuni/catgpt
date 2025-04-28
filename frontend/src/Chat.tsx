@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import { Message, chat } from "./api";
+import { Message, chat, FlowResponse } from "./api";
+
+// Renderer for a linear flow of agents
+function FlowRenderer({ flow }: { flow: FlowResponse }) {
+  return (
+    <div className="w-100">
+      {flow.agents.map((agent, idx) => (
+        <div key={idx} className="card mb-3">
+          <div className="card-header">
+            {agent.name} <small className="text-muted">({agent.type})</small>
+          </div>
+          <div className="card-body">
+            <p><strong>Instructions:</strong> {agent.instructions}</p>
+            <p><strong>Input Schema:</strong></p>
+            <pre className="bg-light border rounded p-2">{JSON.stringify(agent.input_schema, null, 2)}</pre>
+            <p><strong>Output Schema:</strong></p>
+            <pre className="bg-light border rounded p-2">{JSON.stringify(agent.output_schema, null, 2)}</pre>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export interface ChatProps {
   sessionId: string;
@@ -30,10 +52,10 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
 
     setLoading(true);
     try {
-      const assistantContent = await chat(sessionId, userMessage);
+      const flow = await chat(sessionId, userMessage);
       setMessages([
         ...baseMessages,
-        { role: "assistant", content: assistantContent },
+        { role: "assistant", content: flow },
       ]);
     } catch (err) {
       console.error(err);
@@ -73,7 +95,11 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
               className={`msg ${m.role}`}
               ref={isLastUser ? lastUserRef : undefined}
             >
-              <div className="bubble">{m.content}</div>
+              {m.role === "assistant" && typeof m.content !== "string" ? (
+                <FlowRenderer flow={m.content} />
+              ) : (
+                <div className="bubble">{m.content}</div>
+              )}
             </div>
           );
         })}

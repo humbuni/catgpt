@@ -28,6 +28,7 @@ from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
 import logging
+import json
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -140,4 +141,4 @@ async def chat(req: ChatRequest):
     )
 
     # Return the full assistant message as JSON
-    return JSONResponse({"content": assistant_content})
+    return JSONResponse(json.loads(assistant_content))
