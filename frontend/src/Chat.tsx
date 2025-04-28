@@ -87,13 +87,17 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
       </div>
 
       <div className="inputRow">
-        <input
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") send();
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
           }}
           placeholder="Ask anything…"
+          rows={2}
         />
         <button onClick={send} disabled={loading}>Send</button>
       </div>

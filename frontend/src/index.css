@@ -162,6 +162,7 @@ body {
 /* ---- Input area ---- */
 .inputRow {
   display: flex;
+  align-items: flex-end;
   gap: 0.5rem;
   padding: 0.5rem 1rem 1.5rem;
   background: linear-gradient(#f7f7f8 40%, rgba(247, 247, 248, 0));
@@ -171,16 +172,21 @@ body {
   z-index: 5;
 }
 
-.inputRow input {
+.inputRow input,
+.inputRow textarea {
   flex: 1;
   padding: 0.75rem 1rem;
   font-size: 1rem;
   border: 1px solid #dcdcdc;
   border-radius: 8px;
   background: #ffffff;
+  resize: vertical;
+  min-height: 3rem;
+  overflow: auto;
 }
 
-.inputRow input:focus {
+.inputRow input:focus,
+.inputRow textarea:focus {
   outline: none;
   border-color: #a9a9b3;
 }
