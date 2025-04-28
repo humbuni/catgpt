@@ -60,8 +60,8 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   }
 
   return (
-    <div className="chat">
-      <div className="msgs" ref={msgsContainerRef} onScroll={handleScroll}>
+    <div className="chat d-flex flex-column flex-grow-1">
+      <div className="msgs overflow-auto flex-grow-1 p-3 bg-light rounded" ref={msgsContainerRef} onScroll={handleScroll}>
         {messages.map((m, i) => {
           const isLastUser =
             m.role === "user" &&
@@ -87,19 +87,29 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
       </div>
 
       <div className="inputRow">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          placeholder="Ask anything…"
-          rows={2}
-        />
-        <button onClick={send} disabled={loading}>Send</button>
+        <div className="input-group flex-grow-1 align-items-end">
+          <textarea
+            className="form-control"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            placeholder="Ask anything…"
+            rows={2}
+          />
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={send}
+            disabled={loading}
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );

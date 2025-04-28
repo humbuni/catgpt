@@ -118,7 +118,6 @@ body {
 .msgs {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0;
   scroll-behavior: smooth;
 }
 
@@ -172,38 +171,9 @@ body {
   z-index: 5;
 }
 
-.inputRow input,
-.inputRow textarea {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  background: #ffffff;
-  resize: vertical;
-  min-height: 3rem;
-  overflow: auto;
-}
 
-.inputRow input:focus,
-.inputRow textarea:focus {
-  outline: none;
-  border-color: #a9a9b3;
-}
 
-.inputRow button {
-  padding: 0 1.25rem;
-  font-size: 1rem;
-  background: #10a37f;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
 
-.inputRow button:hover {
-  background: #0e8b6d;
-}
 
 /* ---- Thinking icon ---- */
 .thinking {
