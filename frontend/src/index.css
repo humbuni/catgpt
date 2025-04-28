@@ -198,3 +198,15 @@ body {
 .inputRow button:hover {
   background: #0e8b6d;
 }
+
+/* ---- Thinking icon ---- */
+.thinking {
+  font-size: 1.25rem;
+  margin-left: 0.5rem;
+  animation: pulse 1s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}

@@ -25,7 +25,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from starlette.responses import StreamingResponse
+from fastapi.responses import JSONResponse
 
 import logging
 
@@ -121,34 +121,23 @@ async def chat(req: ChatRequest):
     # Build input for the agent SDK (history + latest user message).
     agent_input: List[dict[str, str]] = [*history, user_message]
 
-    # Invoke the Conductor in streaming mode
-    logger.info(f"Calling Conductor.run_stream with {len(agent_input)} messages for session {session_id}")
+    # Invoke the Conductor asynchronously
+    logger.info(f"Calling Conductor.run_async with {len(agent_input)} messages for session {session_id}")
     try:
-        result = _conductor.run_stream(agent_input)
+        result = await _conductor.run_async(agent_input)
     except Exception as exc:  # pragma: no cover – catch any SDK error
-        logger.exception("Conductor.run_stream failed")
+        logger.exception("Conductor.run failed")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    async def event_generator():
-        """Stream deltas from the Agent SDK as Server-Sent Events."""
-        logger.info(f"Streaming events for session {session_id}")
-        async for event in result.stream_events():
-            # We only care about raw response delta events.
-            if (
-                event.type == "raw_response_event"
-                and isinstance(event.data, ResponseTextDeltaEvent)
-            ):
-                delta: str | None = event.data.delta  # type: ignore[attr-defined]
-                if delta:
-                    yield f"data:{delta}\n\n"
+    # Accumulate full assistant response
+    logger.info(f"Accumulating full response for session {session_id}")
+    assistant_content = result.final_output
 
-        # After the stream is complete, persist the full conversation
-        sessions[session_id] = result.to_input_list()
-        logger.info(
-            f"Persisted {len(sessions[session_id])} messages for session {session_id}"
-        )
+    # After receiving the full response, persist the conversation
+    sessions[session_id] = result.to_input_list()
+    logger.info(
+        f"Persisted {len(sessions[session_id])} messages for session {session_id}"
+    )
 
-        # Notify client we're done.
-        yield "data:[DONE]\n\n"
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    # Return the full assistant message as JSON
+    return JSONResponse({"content": assistant_content})

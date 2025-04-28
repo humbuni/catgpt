@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Message, chatStream } from "./api";
+import { Message, chat } from "./api";
 
 export interface ChatProps {
   sessionId: string;
@@ -9,7 +9,7 @@ export interface ChatProps {
 
 export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   const [input, setInput] = useState("");
-  const streaming = useRef(false);
+  const [loading, setLoading] = useState(false);
 
   // refs for scrolling --------------------------------------------------
   const msgsContainerRef = useRef<HTMLDivElement>(null);
@@ -19,31 +19,26 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
 
   async function send() {
     const content = input.trim();
-    if (!content || streaming.current) return;
+    if (!content || loading) return;
 
     const userMessage: Message = { role: "user", content };
     const baseMessages = [...messages, userMessage];
     setMessages(baseMessages);
     setInput("");
-
     // ensure we auto-scroll for the user's new message
     autoScrollRef.current = true;
 
-    streaming.current = true;
-    let assistantContent = "";
-
+    setLoading(true);
     try {
-      for await (const chunk of chatStream(sessionId, userMessage)) {
-        assistantContent += chunk;
-        setMessages([
-          ...baseMessages,
-          { role: "assistant", content: assistantContent },
-        ]);
-      }
+      const assistantContent = await chat(sessionId, userMessage);
+      setMessages([
+        ...baseMessages,
+        { role: "assistant", content: assistantContent },
+      ]);
     } catch (err) {
       console.error(err);
     } finally {
-      streaming.current = false;
+      setLoading(false);
     }
   }
 
@@ -82,6 +77,13 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
             </div>
           );
         })}
+        {loading && (
+          <div key="loading" className="msg assistant">
+            <div className="bubble">
+              <span className="thinking">🤔</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="inputRow">
@@ -93,7 +95,7 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
           }}
           placeholder="Ask anything…"
         />
-        <button onClick={send}>Send</button>
+        <button onClick={send} disabled={loading}>Send</button>
       </div>
     </div>
   );

@@ -7,17 +7,17 @@ environment-dependent configuration (API key, model, system prompt).
 from __future__ import annotations
 
 from typing import Dict, List
-from agents import Agent, Runner, RunResultStreaming
+from agents import Agent, Runner, RunResultStreaming, RunConfig
 
-# import mlflow
+import mlflow
 
 # Enable auto-tracing for OpenAI
 # server needs to be started: mlflow server --host 127.0.0.1 --port 8080
-# mlflow.openai.autolog()
+mlflow.openai.autolog()
 
 # Optional: Set a tracking URI and an experiment
-# mlflow.set_tracking_uri("http://localhost:8080")
-# mlflow.set_experiment("catgpt")
+mlflow.set_tracking_uri("http://localhost:8080")
+mlflow.set_experiment("catgpt")
 
 class Conductor:
     """Create and run a CatGPT Agent using the Agents SDK."""
@@ -55,7 +55,8 @@ class Conductor:
     # Public API
     # ---------------------------------------------------------------------
 
-    def run_stream(self, messages: List[Dict[str, str]]) -> RunResultStreaming:
-        """Run the given message list through the Agent in streaming mode."""
 
-        return Runner.run_streamed(self.agent, input=messages)
+    async def run_async(self, messages: List[Dict[str, str]]) -> RunResult:
+        """Run the given message list through the Agent asynchronously."""
+        # Uses the async Runner API; must be called within an event loop
+        return await Runner.run(self.agent, input=messages)
