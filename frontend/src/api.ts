@@ -15,8 +15,8 @@ export interface Agent {
   name: string;
   type: string;
   instructions: string;
-  input_schema: JSONSchema;
-  output_schema: JSONSchema;
+  input_schema: string;
+  output_schema: string;
 }
 
 /**

@@ -7,7 +7,7 @@ back to the caller as Server-Sent Events.
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from openai.types.responses import ResponseTextDeltaEvent
 
@@ -52,6 +52,14 @@ class ChatRequest(BaseModel):
     session_id: str
     message: dict[str, str]
 
+class ChatResponse(BaseModel):
+    """Schema for a chat response sent to the frontend.
+
+    The response is a JSON object with the assistant's message.
+    """
+
+    role: str
+    content: Any
 
 app = FastAPI(title="CatGPT Backend")
 @app.on_event("startup")
@@ -141,4 +149,5 @@ async def chat(req: ChatRequest):
     )
 
     # Return the full assistant message as JSON
-    return JSONResponse(json.loads(assistant_content))
+    return JSONResponse(json.loads(assistant_content.model_dump_json()))
+    # return JSONResponse(content = json.loads(ChatResponse(role = "assistant", content = assistant_content).model_dump_json()))

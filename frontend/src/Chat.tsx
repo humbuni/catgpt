@@ -49,10 +49,10 @@ function FlowRenderer({ flow }: { flow: FlowResponse }) {
                 View Output Schema
               </button>
               <div className="collapse mt-2" id={`inputSchema-${idx}`}>
-                <pre className="bg-light border rounded p-2">{JSON.stringify(agent.input_schema, null, 2)}</pre>
+                <pre className="bg-light border rounded p-2">{JSON.stringify(JSON.parse(agent.input_schema), null, 2)}</pre>
               </div>
               <div className="collapse mt-2" id={`outputSchema-${idx}`}>
-                <pre className="bg-light border rounded p-2">{JSON.stringify(agent.output_schema, null, 2)}</pre>
+                <pre className="bg-light border rounded p-2">{JSON.stringify(JSON.parse(agent.output_schema), null, 2)}</pre>
               </div>
             </div>
           </div>
@@ -140,10 +140,10 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
                   className={`msg ${m.role}`}
                   ref={isLastUser ? lastUserRef : undefined}
                 >
-                  {m.role === "assistant" && typeof m.content !== "string" ? (
+                  {m.role === "assistant" && typeof m.content === "object" && m.content.agents ? (
                     <FlowRenderer flow={m.content} />
                   ) : (
-                    <div className="bubble">Unable to parse the flow</div>
+                    <div className="bubble">{m.content}</div>
                   )}
                 </div>
               );
