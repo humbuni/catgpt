@@ -4,18 +4,57 @@ import { Message, chat, FlowResponse } from "./api";
 // Renderer for a linear flow of agents
 function FlowRenderer({ flow }: { flow: FlowResponse }) {
   return (
-    <div className="w-100">
+    <div className="accordion" id="flowAccordion">
       {flow.agents.map((agent, idx) => (
-        <div key={idx} className="card mb-3">
-          <div className="card-header">
-            {agent.name} <small className="text-muted">({agent.type})</small>
-          </div>
-          <div className="card-body">
-            <p><strong>Instructions:</strong> {agent.instructions}</p>
-            <p><strong>Input Schema:</strong></p>
-            <pre className="bg-light border rounded p-2">{JSON.stringify(agent.input_schema, null, 2)}</pre>
-            <p><strong>Output Schema:</strong></p>
-            <pre className="bg-light border rounded p-2">{JSON.stringify(agent.output_schema, null, 2)}</pre>
+        <div key={idx} className="accordion-item">
+          <h2 className="accordion-header" id={`heading-${idx}`}>
+            <button
+              className="accordion-button"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target={`#collapse-${idx}`}
+              aria-expanded="true"
+              aria-controls={`collapse-${idx}`}
+            >
+              {agent.name} ({agent.type})
+            </button>
+          </h2>
+          <div
+            id={`collapse-${idx}`}
+            className="accordion-collapse collapse"
+            aria-labelledby={`heading-${idx}`}
+            data-bs-parent="#flowAccordion"
+          >
+            <div className="accordion-body">
+              <h6>Instructions</h6>
+              <p>{agent.instructions}</p>
+              <button
+                className="btn btn-outline-primary btn-sm me-2"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target={`#inputSchema-${idx}`}
+                aria-expanded="false"
+                aria-controls={`inputSchema-${idx}`}
+              >
+                View Input Schema
+              </button>
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target={`#outputSchema-${idx}`}
+                aria-expanded="false"
+                aria-controls={`outputSchema-${idx}`}
+              >
+                View Output Schema
+              </button>
+              <div className="collapse mt-2" id={`inputSchema-${idx}`}>
+                <pre className="bg-light border rounded p-2">{JSON.stringify(agent.input_schema, null, 2)}</pre>
+              </div>
+              <div className="collapse mt-2" id={`outputSchema-${idx}`}>
+                <pre className="bg-light border rounded p-2">{JSON.stringify(agent.output_schema, null, 2)}</pre>
+              </div>
+            </div>
           </div>
         </div>
       ))}
@@ -82,59 +121,69 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   }
 
   return (
-    <div className="chat d-flex flex-column flex-grow-1">
-      <div className="msgs overflow-auto flex-grow-1 p-3 bg-light rounded" ref={msgsContainerRef} onScroll={handleScroll}>
-        {messages.map((m, i) => {
-          const isLastUser =
-            m.role === "user" &&
-            // check if there's no later user message
-            messages.slice(i + 1).every((mm) => mm.role !== "user");
-          return (
-            <div
-              key={i}
-              className={`msg ${m.role}`}
-              ref={isLastUser ? lastUserRef : undefined}
-            >
-              {m.role === "assistant" && typeof m.content !== "string" ? (
-                <FlowRenderer flow={m.content} />
-              ) : (
-                <div className="bubble">{m.content}</div>
-              )}
-            </div>
-          );
-        })}
-        {loading && (
-          <div key="loading" className="msg assistant">
-            <div className="bubble">
-              <span className="thinking">🤔</span>
-            </div>
+    <div className="container chat d-flex flex-column flex-grow-1 vh-100">
+      <div className="row flex-grow-1 overflow-hidden">
+        <div className="col">
+          <div
+            className="msgs overflow-auto flex-grow-1 p-3 bg-light rounded"
+            ref={msgsContainerRef}
+            onScroll={handleScroll}
+          >
+            {messages.map((m, i) => {
+              const isLastUser =
+                m.role === "user" &&
+                // check if there's no later user message
+                messages.slice(i + 1).every((mm) => mm.role !== "user");
+              return (
+                <div
+                  key={i}
+                  className={`msg ${m.role}`}
+                  ref={isLastUser ? lastUserRef : undefined}
+                >
+                  {m.role === "assistant" && typeof m.content !== "string" ? (
+                    <FlowRenderer flow={m.content} />
+                  ) : (
+                    <div className="bubble">Unable to parse the flow</div>
+                  )}
+                </div>
+              );
+            })}
+            {loading && (
+              <div key="loading" className="msg assistant">
+                <div className="bubble">
+                  <span className="thinking">🤔</span>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="inputRow">
-        <div className="input-group flex-grow-1 align-items-end">
-          <textarea
-            className="form-control"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder="Ask anything…"
-            rows={2}
-          />
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={send}
-            disabled={loading}
-          >
-            Send
-          </button>
+      <div className="row mt-3">
+        <div className="col">
+          <div className="input-group flex-grow-0 align-items-end">
+            <textarea
+              className="form-control"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder="Ask anything…"
+              rows={2}
+            />
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={send}
+              disabled={loading}
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </div>
