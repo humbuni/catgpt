@@ -1,14 +1,14 @@
-from agents import Agent, Runner, TResponseInputItem
+from agents import Agent, ModelSettings, Runner, TResponseInputItem
 
 class BaseAgent:
-    def __init__(self, name: str, instructions: str, tools=None, mcp_servers=None, model="gpt-4.1", model_settings=None):
+    def __init__(self, name: str, instructions: str, tools=None, mcp_servers=None, model="gpt-4.1", model_settings: ModelSettings=ModelSettings()):
         self.agent = Agent(
             name=name,
             instructions=instructions,
             tools=tools or [],
             mcp_servers=mcp_servers or [],
             model=model,
-            model_settings=model_settings or {},
+            model_settings=model_settings
         )
 
     def __enter__(self):
