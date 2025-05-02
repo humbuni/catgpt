@@ -1,29 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import { Message, chat, FlowResponse } from "./api";
 
 // Renderer for a linear flow of agents
 function FlowRenderer({ flow }: { flow: FlowResponse }) {
+  const uniquePrefix = useId();
   return (
-    <div className="accordion" id="flowAccordion">
+    <div className="accordion" id={`flowAccordion-${uniquePrefix}`}>
       {flow.agents.map((agent, idx) => (
         <div key={idx} className="accordion-item">
-          <h2 className="accordion-header" id={`heading-${idx}`}>
+          <h2 className="accordion-header" id={`heading-${uniquePrefix}-${idx}`}>
             <button
               className="accordion-button"
               type="button"
               data-bs-toggle="collapse"
-              data-bs-target={`#collapse-${idx}`}
+              data-bs-target={`#collapse-${uniquePrefix}-${idx}`}
               aria-expanded="true"
-              aria-controls={`collapse-${idx}`}
+              aria-controls={`collapse-${uniquePrefix}-${idx}`}
             >
-              {agent.name} ({agent.type})
+              {agent.name} <span className="badge bg-secondary ms-2">{agent.type}</span>
             </button>
           </h2>
           <div
-            id={`collapse-${idx}`}
+            id={`collapse-${uniquePrefix}-${idx}`}
             className="accordion-collapse collapse"
-            aria-labelledby={`heading-${idx}`}
-            data-bs-parent="#flowAccordion"
+            aria-labelledby={`heading-${uniquePrefix}-${idx}`}
+            data-bs-parent={`#flowAccordion-${uniquePrefix}`}
           >
             <div className="accordion-body">
               <h6>Instructions</h6>
