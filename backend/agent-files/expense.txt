@@ -1,3 +1,3 @@
 Expense for dinner:
-- 3 people (FTE)
-- total: $150
+- 10 people (FTE)
+- total: $800

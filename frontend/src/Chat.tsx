@@ -28,7 +28,7 @@ function FlowRenderer({ flow }: { flow: FlowResponse }) {
             <div className="accordion-body">
               <h6>Instructions</h6>
               <p>{agent.instructions}</p>
-              <button
+              {/* <button
                 className="btn btn-outline-primary btn-sm me-2"
                 type="button"
                 data-bs-toggle="collapse"
@@ -53,7 +53,7 @@ function FlowRenderer({ flow }: { flow: FlowResponse }) {
               </div>
               <div className="collapse mt-2" id={`outputSchema-${idx}`}>
                 <pre className="bg-light border rounded p-2">{JSON.stringify(JSON.parse(agent.output_schema), null, 2)}</pre>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

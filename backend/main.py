@@ -14,13 +14,10 @@ from openai.types.responses import ResponseTextDeltaEvent
 # Conductor class wraps the Agents SDK.
 # Attempt relative import when running as a package (e.g., `uvicorn backend.main:app`).
 # Fallback to a same-directory import when executing directly.
-try:
-    from .conductor import Conductor  # type: ignore
-except ImportError:  # pragma: no cover
-    from conductor import Conductor  # type: ignore
+from flowagents.conductor import ConductorAgent  # type: ignore
 
 # Single, long-lived instance reused across requests.
-_conductor = Conductor()
+_conductor = ConductorAgent()
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel

@@ -1,4 +1,4 @@
 All expenses reports must be submitted on http://aka.ms/msexpense
 Expenses of $75 or less don't need manager approval.
-Expenses above $5000 require special approval.
-Other expenses can be submitted to direvt manager.
+Expenses above $500 require special approval from soloukil@microsoft.com.
+Other expenses can be submitted to direct manager.
