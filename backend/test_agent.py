@@ -2,8 +2,9 @@ import asyncio
 
 from agents import RunResult, trace
 
+from flowagents.computerUse import ComputerUseAgent
 from flowagents.base import BaseAgent
-from flowagents.conductor import AgentDefinition, AgentWorkflow, ConductorAgent
+from flowagents.conductor import AgentWorkflow, ConductorAgent
 from flowagents.assistant import AssistantAgent
 from flowagents.filesystem import FileSystemAgent
 
@@ -36,7 +37,7 @@ async def main():
             "role": "user",
             # "content": "I have an invoice (file invoice.txt). Help me decide based on company policy (in policies.txt) if I can approve and submit it for payment. If so, do it. If not, explain why it cannot be approved. Write a draft email to notify the customer if the invoice was approved, or if it was rejected, in which case explain why. If approved, submit the invoice at http://submit-invoice.com.",
             # "content": "I have an expense (file expense.txt). Based on the file policies.txt, draft an email to ask for approval if needed. In all cases, submit the expense report on aka.ms/msexpense",
-            "content": "I have an expense (file expense.txt). Based on the file policies.txt, decide if an approval is needed. If so, draft an email to ask for approval. In all cases, submit the expense report on aka.ms/msexpense",
+            "content": "I have an expense (file expense.txt). Based on the file policies.txt, decide if an approval is needed. If so, draft an email to ask for approval. In all cases, submit the expense report at http://localhost:3000/submit",
         }
         result = await conductor.run_async(messages = [user_message])
 
@@ -53,21 +54,23 @@ async def main():
                 agent = FileSystemAgent(name = agentStep.name)
             elif(agentStep.type == "assistant"):
                 agent = AssistantAgent(name = agentStep.name)
+            elif(agentStep.type == "computeruse"):
+                agent = ComputerUseAgent(name = agentStep.name)
             else:
                 raise ValueError(f"Unknown agent type: {agentStep.type}")
 
-            await agent.__aenter__()
+            async with agent:
 
-            if(result == None):
-                input = [{"role": "user", "content": agentStep.instructions}]
-            else:
-                input = result.to_input_list() + [{"role": "user", "content": agentStep.instructions}]
+                if(result == None):
+                    input = [{"role": "user", "content": agentStep.instructions}]
+                else:
+                    input = result.to_input_list() + [{"role": "user", "content": agentStep.instructions}]
 
-            logger.info(f"Agent Input: {input}")
-            result = await agent.execute(input)
+                # logger.info(f"Agent Input: {input}")
+                result = await agent.execute(input)
 
-            logger.info(f"Agent Result: {result.final_output}")
-            await agent.__aexit__(None, None, None)
+                logger.info(f"Agent Result: {result.final_output}")
+
             logger.info(f"*******************************************************")
 
 if __name__ == "__main__":

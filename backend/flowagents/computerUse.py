@@ -84,7 +84,7 @@ class LocalPlaywrightComputer(AsyncComputer):
         browser = await self.playwright.chromium.launch(headless=False, args=launch_args)
         page = await browser.new_page()
         await page.set_viewport_size({"width": width, "height": height})
-        await page.goto("https://www.bing.com")
+        await page.goto("http://localhost:3000/submit")
         return browser, page
 
     async def __aenter__(self):
@@ -167,13 +167,3 @@ class LocalPlaywrightComputer(AsyncComputer):
         for px, py in path[1:]:
             await self.page.mouse.move(px, py)
         await self.page.mouse.up()
-
-
-async def main():
-    async with ComputerUseAgent(name="cua") as agent:
-        result = await agent.execute("search for msft stock price")  # Example usage
-        print(result.final_output)
-
-if __name__ == "__main__":
-    # Let's make sure the user has npx installed
-    asyncio.run(main())
