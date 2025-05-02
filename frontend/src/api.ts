@@ -62,3 +62,17 @@ export async function chat(
   const data = await res.json();
   return data as ChatResponse;
 }
+
+/**
+ * Call the backend /run endpoint and return the streamed response as text.
+ */
+export async function run(): Promise<Response> {
+  const res = await fetch(`${BASE_URL}/run`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.body) {
+    throw new Error("No response body for streaming");
+  }
+  return res;
+}

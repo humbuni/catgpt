@@ -22,7 +22,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+import asyncio
 
 import logging
 import json
@@ -148,3 +149,18 @@ async def chat(req: ChatRequest):
     # Return the full assistant message as JSON
     return JSONResponse(json.loads(assistant_content.model_dump_json()))
     # return JSONResponse(content = json.loads(ChatResponse(role = "assistant", content = assistant_content).model_dump_json()))
+
+@app.get("/run")
+async def run():
+    """Streams a few static messages, one per second, as server-sent events (SSE)."""
+    async def message_stream():
+        messages = [
+            "First message",
+            "Second message",
+            "Third message",
+            "Done!"
+        ]
+        for msg in messages:
+            yield f"data: {msg}\n\n"
+            await asyncio.sleep(1)
+    return StreamingResponse(message_stream(), media_type="text/event-stream")

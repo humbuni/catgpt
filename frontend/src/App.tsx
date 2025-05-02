@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { nanoid } from "nanoid";
+import React from "react";
 import Chat from "./Chat";
-import { Message } from "./api";
+import { Message, run } from "./api";
 
 interface Session {
   id: string;
@@ -51,6 +52,37 @@ export default function App() {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
+  // State for streamed run messages
+  const [runMessages, setRunMessages] = useState<string[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+
+  // Handler for Run button
+  const handleRun = async () => {
+    setRunMessages([]);
+    setIsRunning(true);
+    const response = await run();
+    if (!response.body) {
+      setIsRunning(false);
+      return;
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let lines = buffer.split("\n\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          setRunMessages((prev) => [...prev, line.replace("data: ", "").trim()]);
+        }
+      }
+    }
+    setIsRunning(false);
+  };
+
   return (
     <div className="appContainer">
       {/* --- sidebar -------------------------------------------------- */}
@@ -86,11 +118,15 @@ export default function App() {
       {/* --- main area ------------------------------------------------- */}
       <div className="main container">
         <h1 className="header">🐱 CatGPT</h1>
+        {/* Run button and streamed output moved to Chat */}
         <Chat
           key={activeId}
           sessionId={activeId}
           messages={activeSession.messages}
           setMessages={setActiveMessages}
+          runMessages={runMessages}
+          isRunning={isRunning}
+          handleRun={handleRun}
         />
       </div>
     </div>

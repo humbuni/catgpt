@@ -41,6 +41,9 @@ export interface ChatProps {
   sessionId: string;
   messages: Message[];
   setMessages: (msgs: Message[]) => void;
+  runMessages: string[];
+  isRunning: boolean;
+  handleRun: () => void;
 }
 
 export function ChatMessagesPanel({ messages, loading, input, setInput, send }: any) {
@@ -125,7 +128,7 @@ export function ChatMessagesPanel({ messages, loading, input, setInput, send }: 
   );
 }
 
-export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
+export default function Chat({ sessionId, messages, setMessages, runMessages, isRunning, handleRun }: ChatProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [flow, setFlow] = useState<FlowResponse | null>(null);
@@ -158,6 +161,17 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
       <div className="row flex-grow-1 overflow-hidden">
         <div className="col-8 pe-2">
           <FlowRenderer flow={flow} />
+          {/* Run button and streamed output */}
+          <div className="run-section mt-3">
+            <button className="btn btn-success" onClick={handleRun} disabled={isRunning}>
+              {isRunning ? "Running..." : "Run"}
+            </button>
+            <div className="run-output mt-2 bg-dark text-light p-2 rounded" style={{ minHeight: 40 }}>
+              {runMessages.map((msg, idx) => (
+                <div key={idx} style={{ whiteSpace: "pre-wrap" }}>{msg}</div>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="col-4 ps-2">
           <ChatMessagesPanel
