@@ -9,15 +9,21 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from agents import RunResult
 from openai.types.responses import ResponseTextDeltaEvent
 
 # Conductor class wraps the Agents SDK.
 # Attempt relative import when running as a package (e.g., `uvicorn backend.main:app`).
 # Fallback to a same-directory import when executing directly.
+from flowagents.base import BaseAgent
+from flowagents.assistant import AssistantAgent
+from flowagents.computerUse import ComputerUseAgent
+from flowagents.filesystem import FileSystemAgent
 from flowagents.conductor import AgentWorkflow, ConductorAgent, ConductorResponse  # type: ignore
 
 # Single, long-lived instance reused across requests.
 _conductor = ConductorAgent()
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -139,6 +145,7 @@ async def chat(req: ChatRequest):
     # Accumulate full assistant response
     logger.info(f"Accumulating full response for session {session_id}")
     assistant_content: ConductorResponse = result.final_output
+    _workflow = assistant_content.flow
 
     # After receiving the full response, persist the conversation
     sessions[session_id] = result.to_input_list()
@@ -150,17 +157,37 @@ async def chat(req: ChatRequest):
     return JSONResponse(json.loads(assistant_content.model_dump_json()))
     # return JSONResponse(content = json.loads(ChatResponse(role = "assistant", content = assistant_content).model_dump_json()))
 
-@app.get("/run")
-async def run():
-    """Streams a few static messages, one per second, as server-sent events (SSE)."""
+@app.post("/run")
+async def run(workflow: AgentWorkflow):
+    """Run a workflow of agents and stream the results as server-sent events (SSE)."""
     async def message_stream():
-        messages = [
-            "First message",
-            "Second message",
-            "Third message",
-            "Done!"
-        ]
-        for msg in messages:
-            yield f"data: {msg}\n\n"
-            await asyncio.sleep(1)
+        agent: BaseAgent = None
+        result: RunResult = None
+        for agentStep in workflow.agents:
+            logger.info(f"Agent Name: {agentStep.name}")
+            logger.info(f"Agent Type: {agentStep.type}")
+            logger.info(f"Agent Instructions: {agentStep.instructions}")
+
+            if(agentStep.type == "filesystem"):
+                agent = FileSystemAgent(name = agentStep.name)
+            elif(agentStep.type == "assistant"):
+                agent = AssistantAgent(name = agentStep.name)
+            elif(agentStep.type == "computeruse"):
+                agent = ComputerUseAgent(name = agentStep.name)
+            else:
+                raise ValueError(f"Unknown agent type: {agentStep.type}")
+
+            async with agent:
+
+                if(result == None):
+                    input = [{"role": "user", "content": agentStep.instructions}]
+                else:
+                    input = result.to_input_list() + [{"role": "user", "content": agentStep.instructions}]
+
+                # logger.info(f"Agent Input: {input}")
+                result = await agent.execute(input)
+                agentStep.result = result.final_output
+
+            yield f"data: {workflow.model_dump_json()}\n\n"
+
     return StreamingResponse(message_stream(), media_type="text/event-stream")

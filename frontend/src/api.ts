@@ -15,6 +15,7 @@ export interface Agent {
   name: string;
   type: string;
   instructions: string;
+  result: string;
   input_schema: string;
   output_schema: string;
 }
@@ -66,10 +67,11 @@ export async function chat(
 /**
  * Call the backend /run endpoint and return the streamed response as text.
  */
-export async function run(): Promise<Response> {
+export async function run(workflow: FlowResponse): Promise<Response> {
   const res = await fetch(`${BASE_URL}/run`, {
-    method: "GET",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(workflow),
   });
   if (!res.body) {
     throw new Error("No response body for streaming");

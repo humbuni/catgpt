@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useId } from "react";
-import { Message, chat, FlowResponse } from "./api";
+import { Message, chat, FlowResponse, run } from "./api";
 
 // Renderer for a linear flow of agents
 function FlowRenderer({ flow }: { flow: FlowResponse | null }) {
@@ -29,6 +29,8 @@ function FlowRenderer({ flow }: { flow: FlowResponse | null }) {
             <div className="accordion-body">
               <h6>Instructions</h6>
               <p>{agent.instructions}</p>
+              <h6>Result</h6>
+              <p>{agent.result}</p>
             </div>
           </div>
         </div>
@@ -41,9 +43,6 @@ export interface ChatProps {
   sessionId: string;
   messages: Message[];
   setMessages: (msgs: Message[]) => void;
-  runMessages: string[];
-  isRunning: boolean;
-  handleRun: () => void;
 }
 
 export function ChatMessagesPanel({ messages, loading, input, setInput, send }: any) {
@@ -128,10 +127,46 @@ export function ChatMessagesPanel({ messages, loading, input, setInput, send }: 
   );
 }
 
-export default function Chat({ sessionId, messages, setMessages, runMessages, isRunning, handleRun }: ChatProps) {
+export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [flow, setFlow] = useState<FlowResponse | null>(null);
+  // --- Run button state ---
+  const [runMessages, setRunMessages] = useState<string[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+
+  async function handleRun() {
+    // setIsRunning(true);
+    setRunMessages([]);
+    // Example: simulate streamed output
+    // for (const msg of ["Running agent...", "Step 1 complete", "Step 2 complete", "Done!"]) {
+    //   await new Promise((r) => setTimeout(r, 500));
+    //   setRunMessages((prev) => [...prev, msg]);
+    // }
+
+    if(flow)
+    {
+      const response = await run(flow);
+      if (!response.body) {
+        setIsRunning(false);
+        return;
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer = decoder.decode(value, { stream: true });
+        const flowJson = buffer.replace("data: ", "")
+
+        const data = JSON.parse(flowJson) as FlowResponse;
+        setFlow(data)
+      }
+
+      setIsRunning(false);
+    }
+  }
 
   async function send() {
     const content = input.trim();

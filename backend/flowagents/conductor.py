@@ -24,6 +24,7 @@ class AgentDefinition(BaseModel):
     name: str
     type: str
     instructions: str
+    result: str
 
 class AgentWorkflow(BaseModel):
     agents: List[AgentDefinition]
