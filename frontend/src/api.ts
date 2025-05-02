@@ -31,17 +31,25 @@ export interface FlowResponse {
  */
 export interface Message {
   role: "user" | "assistant";
-  content: string | FlowResponse;
+  content: string | ChatResponse;
+}
+
+/**
+ * Response from the backend: assistant message and agent flow
+ */
+export interface ChatResponse {
+  message: string;
+  flow: FlowResponse;
 }
 
 /**
  * Send a chat message and return the server's response,
- * which is expected to be a JSON flow of agents.
+ * which is expected to be a JSON object with message and flow.
  */
 export async function chat(
   sessionId: string,
   message: Message
-): Promise<FlowResponse> {
+): Promise<ChatResponse> {
   const res = await fetch(`${BASE_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -50,7 +58,7 @@ export async function chat(
   if (!res.ok) {
     throw new Error(`Unexpected response ${res.status}`);
   }
-  // Expecting a JSON object of shape { agents: [...] }
+  // Expecting a JSON object of shape { message, flow }
   const data = await res.json();
-  return data as FlowResponse;
+  return data as ChatResponse;
 }

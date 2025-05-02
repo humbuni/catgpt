@@ -28,6 +28,10 @@ class AgentDefinition(BaseModel):
 class AgentWorkflow(BaseModel):
     agents: List[AgentDefinition]
 
+class ConductorResponse(BaseModel):
+    flow: AgentWorkflow
+    message: str
+
 class ConductorAgent:
     """Create and run a CatGPT Agent using the Agents SDK."""
 
@@ -42,7 +46,8 @@ class ConductorAgent:
             "2. 'filesystem': agent capable of accessing files on a computer." \
             "3. 'computeruse': agent capable of using a computer to do any generic task on a computer, such as accessing the web and searching for information, or using any app. If there's a repetitve task, " \
             "4. 'websearch': agent capable of searching the web." \
-            "You can have multiple instances of each agent, with specific instructions to help them focus on a particular topic or sub task.",
+            "You can have multiple instances of each agent, with specific instructions to help them focus on a particular topic or sub task." \
+            "Include a friendly message to explained what you've done.",
             # "Output the plan using json. You must return a valid json object. The plan must include the following properties:" \
             # "Output the plan using markdown syntax. The plan must include the following sections:" \
             # "1. prerequisites: input or anything you need from the user, such as location of data to handle, sources of information, etc." \
@@ -51,7 +56,7 @@ class ConductorAgent:
             # "As you prepare the plan, do not hesitate to specify pre-requirements if you think there are any to accomplish the task. Plan must specify each agents you will use and instructions for them to be able to accomplish their task. You cannot use an assistant no listed above. Once your plan is ready, write it down as and confirmation to the user to execute it.",
             model = "o3",
             handoffs = [],
-            output_type= AgentWorkflow
+            output_type= ConductorResponse
         )
 
     # ---------------------------------------------------------------------

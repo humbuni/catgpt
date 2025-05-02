@@ -14,7 +14,7 @@ from openai.types.responses import ResponseTextDeltaEvent
 # Conductor class wraps the Agents SDK.
 # Attempt relative import when running as a package (e.g., `uvicorn backend.main:app`).
 # Fallback to a same-directory import when executing directly.
-from flowagents.conductor import ConductorAgent  # type: ignore
+from flowagents.conductor import AgentWorkflow, ConductorAgent, ConductorResponse  # type: ignore
 
 # Single, long-lived instance reused across requests.
 _conductor = ConductorAgent()
@@ -137,7 +137,7 @@ async def chat(req: ChatRequest):
 
     # Accumulate full assistant response
     logger.info(f"Accumulating full response for session {session_id}")
-    assistant_content = result.final_output
+    assistant_content: ConductorResponse = result.final_output
 
     # After receiving the full response, persist the conversation
     sessions[session_id] = result.to_input_list()

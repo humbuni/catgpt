@@ -84,7 +84,7 @@ export default function App() {
       </div>
 
       {/* --- main area ------------------------------------------------- */}
-      <div className="main">
+      <div className="main container">
         <h1 className="header">🐱 CatGPT</h1>
         <Chat
           key={activeId}
