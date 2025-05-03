@@ -156,6 +156,16 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
     if(flow) {
       setIsRunning(true);
 
+      let currentResult: { [agent: string]: string } = {};
+      let currentStatus: { [agent: string]: string } = {};
+      flow.agents.forEach(agentStep => {
+        currentStatus[agentStep.name] = "planned";
+      });
+      setExecutionResults({
+        response: { ...currentResult },
+        status: { ...currentStatus }
+      });
+
       const response = await run(flow);
       if (!response.body) {
         setIsRunning(false);
@@ -164,27 +174,61 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let currentAgent: string | null = null;
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let eventBoundary = buffer.indexOf("\n\n");
-        while (eventBoundary !== -1) {
-          const eventStr = buffer.slice(0, eventBoundary).trim();
-          buffer = buffer.slice(eventBoundary + 2);
-          if (eventStr.startsWith("data: ")) {
-            const dataJson = eventStr.replace(/^data: /, "");
-            try {
-              const data = JSON.parse(dataJson) as FlowExecutionResult;
-              setExecutionResults(data);
-            } catch (err) {
-              console.error("Failed to parse SSE data:", dataJson, err);
-            }
+        if (done) {
+          if(currentAgent) {
+            currentStatus[currentAgent] = "completed";
+            setExecutionResults({
+              response: { ...currentResult },
+              status: { ...currentStatus }
+            });
           }
-          eventBoundary = buffer.indexOf("\n\n");
+          break;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        let eventBoundary = buffer.indexOf("<newline>");
+        while (eventBoundary !== -1) {
+          const eventStr = buffer.slice(0, eventBoundary);
+          buffer = buffer.slice(eventBoundary + "<newline>".length);
+          const dataStr = eventStr;
+          // Custom streaming format: ::result::, {agentName}::, then data
+          if (dataStr.startsWith("::result::")) {
+            // New result for an agent
+            const rest = dataStr.slice("::result::".length);
+            const agentSepIdx = rest.indexOf("::");
+            if (agentSepIdx !== -1) {
+              currentAgent = rest.slice(0, agentSepIdx);
+              // Start new result for this agent
+              if (!(currentAgent in currentResult)) {
+                currentResult[currentAgent] = "";
+                currentStatus[currentAgent] = "running";
+                setExecutionResults({
+                  response: { ...currentResult },
+                  status: { ...currentStatus }
+                });
+              }
+            }
+          } else if (dataStr.startsWith("::end::")) {
+            if(currentAgent) {
+              currentStatus[currentAgent] = "completed";
+              setExecutionResults({
+                response: { ...currentResult },
+                status: { ...currentStatus }
+              });
+            }
+          } else if (currentAgent) {
+            // Append streamed data to the current agent's result
+            currentResult[currentAgent] = (currentResult[currentAgent] || "") + dataStr;
+            setExecutionResults({
+              response: { ...currentResult },
+              status: { ...currentStatus }
+            });
+          }
+          eventBoundary = buffer.indexOf("<newline>");
         }
       }
-
       setIsRunning(false);
     }
   }

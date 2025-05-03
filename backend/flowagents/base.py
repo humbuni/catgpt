@@ -1,4 +1,4 @@
-from agents import Agent, ModelSettings, RunResult, Runner, TResponseInputItem
+from agents import Agent, ModelSettings, RunConfig, RunResult, RunResultStreaming, Runner, TResponseInputItem
 from pydantic import BaseModel
 
 class AgentExecutionResult(BaseModel):
@@ -30,3 +30,6 @@ class BaseAgent:
 
     async def execute(self, instruction: str | list[TResponseInputItem]) -> RunResult:
         return await Runner.run(starting_agent=self.agent, input=instruction, max_turns=100)
+
+    async def execute_stream(self, instruction: str | list[TResponseInputItem]) -> RunResultStreaming:
+        return Runner.run_streamed(starting_agent=self.agent, input=instruction, max_turns=100, run_config=RunConfig(tracing_disabled=True))

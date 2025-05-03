@@ -10,15 +10,8 @@ from typing import Any, Dict, List
 from agents import Agent, RunResult, Runner
 from pydantic import BaseModel
 
-import mlflow
-
 # Enable auto-tracing for OpenAI
 # server needs to be started: mlflow server --host 127.0.0.1 --port 8080
-mlflow.openai.autolog()
-
-# Optional: Set a tracking URI and an experiment
-mlflow.set_tracking_uri("http://localhost:8080")
-mlflow.set_experiment("catgpt")
 
 class AgentDefinition(BaseModel):
     name: str
@@ -55,7 +48,7 @@ class ConductorAgent:
             # "2. agents: detailed setup for each agent in the team, including fields name, type and instructions for each agent, input_schema and output_schema. Input and output must be descripted using json schema. Please add descriptions for each field as well as a description for the object itself."\
             # "Once your planned is approved by the user, you can execute it.",
             # "As you prepare the plan, do not hesitate to specify pre-requirements if you think there are any to accomplish the task. Plan must specify each agents you will use and instructions for them to be able to accomplish their task. You cannot use an assistant no listed above. Once your plan is ready, write it down as and confirmation to the user to execute it.",
-            model = "o4-mini",
+            model = "o3",
             handoffs = [],
             output_type= ConductorResponse
         )

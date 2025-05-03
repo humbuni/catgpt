@@ -173,8 +173,7 @@ async def run(workflow: AgentWorkflow):
             logger.info(f"Agent Type: {agentStep.type}")
             logger.info(f"Agent Instructions: {agentStep.instructions}")
 
-            agentExecution.status[agentStep.name] = "running"
-            yield f"data: {agentExecution.model_dump_json()}\n\n"
+            yield f"::result::{agentStep.name}::<newline>"
 
             if(agentStep.type == "filesystem"):
                 agent = FileSystemAgent(name = agentStep.name)
@@ -193,12 +192,16 @@ async def run(workflow: AgentWorkflow):
                     input.append({"role": "user", "content": agentStep.instructions})
 
                 # logger.info(f"Agent Input: {input}")
-                result = await agent.execute(input)
+                result = await agent.execute_stream(input)
 
-                agentExecution.response[agentStep.name] = result.final_output
-                agentExecution.status[agentStep.name] = "completed"
+                async for event in result.stream_events():
+                    if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+                        yield f"{event.data.delta}<newline>"
+
+                yield f"::end::<newline>"
+
                 input.append({"role": "assistant", "content": result.final_output})
+                await asyncio.sleep(3)
 
-            yield f"data: {agentExecution.model_dump_json()}\n\n"
 
     return StreamingResponse(message_stream(), media_type="text/event-stream")
