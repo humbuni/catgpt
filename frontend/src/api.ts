@@ -15,7 +15,6 @@ export interface Agent {
   name: string;
   type: string;
   instructions: string;
-  result: string;
   input_schema: string;
   output_schema: string;
 }
@@ -25,6 +24,11 @@ export interface Agent {
  */
 export interface FlowResponse {
   agents: Agent[];
+}
+
+export interface FlowExecutionResult {
+  status: { [key: string]: string }
+  response: { [key: string]: string }
 }
 
 /**

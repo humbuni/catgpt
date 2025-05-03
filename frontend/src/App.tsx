@@ -55,7 +55,7 @@ export default function App() {
     <div className="appContainer">
       {/* --- main area ------------------------------------------------- */}
       <div className="main container">
-        <h1 className="header">🐱 CatGPT</h1>
+        <h1 className="header">Agent flow</h1>
         <Chat
           key={activeId}
           sessionId={activeId}

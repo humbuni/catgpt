@@ -15,7 +15,7 @@ from openai.types.responses import ResponseTextDeltaEvent
 # Conductor class wraps the Agents SDK.
 # Attempt relative import when running as a package (e.g., `uvicorn backend.main:app`).
 # Fallback to a same-directory import when executing directly.
-from flowagents.base import BaseAgent
+from flowagents.base import AgentExecutionResult, BaseAgent
 from flowagents.assistant import AssistantAgent
 from flowagents.computerUse import ComputerUseAgent
 from flowagents.filesystem import FileSystemAgent
@@ -163,10 +163,18 @@ async def run(workflow: AgentWorkflow):
     async def message_stream():
         agent: BaseAgent = None
         result: RunResult = None
+        agentExecution: AgentExecutionResult = AgentExecutionResult()
+        for agentStep in workflow.agents:
+            agentExecution.status[agentStep.name] = "planned"
+            agentExecution.response[agentStep.name] = None
+
         for agentStep in workflow.agents:
             logger.info(f"Agent Name: {agentStep.name}")
             logger.info(f"Agent Type: {agentStep.type}")
             logger.info(f"Agent Instructions: {agentStep.instructions}")
+
+            agentExecution.status[agentStep.name] = "running"
+            yield f"data: {agentExecution.model_dump_json()}\n\n"
 
             if(agentStep.type == "filesystem"):
                 agent = FileSystemAgent(name = agentStep.name)
@@ -182,12 +190,15 @@ async def run(workflow: AgentWorkflow):
                 if(result == None):
                     input = [{"role": "user", "content": agentStep.instructions}]
                 else:
-                    input = result.to_input_list() + [{"role": "user", "content": agentStep.instructions}]
+                    input.append({"role": "user", "content": agentStep.instructions})
 
                 # logger.info(f"Agent Input: {input}")
                 result = await agent.execute(input)
-                agentStep.result = result.final_output
 
-            yield f"data: {workflow.model_dump_json()}\n\n"
+                agentExecution.response[agentStep.name] = result.final_output
+                agentExecution.status[agentStep.name] = "completed"
+                input.append({"role": "assistant", "content": result.final_output})
+
+            yield f"data: {agentExecution.model_dump_json()}\n\n"
 
     return StreamingResponse(message_stream(), media_type="text/event-stream")

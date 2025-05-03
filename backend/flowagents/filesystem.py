@@ -21,7 +21,7 @@ class FileSystemAgent(BaseAgent):
         )
         super().__init__(
             name="File System Assistant",
-            instructions="Use the tools to read the filesystem and answer questions based on those files. Only attempt to read files under " + samples_dir,
+            instructions="Use the tools to read the filesystem and answer questions based on those files. Assume that any requested file is a relative path and if it doesn't start with 'agent-files/' add prefix that to the path.",
             mcp_servers=[self.server],
         )
 

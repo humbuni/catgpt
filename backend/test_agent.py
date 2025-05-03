@@ -37,7 +37,7 @@ async def main():
             "role": "user",
             # "content": "I have an invoice (file invoice.txt). Help me decide based on company policy (in policies.txt) if I can approve and submit it for payment. If so, do it. If not, explain why it cannot be approved. Write a draft email to notify the customer if the invoice was approved, or if it was rejected, in which case explain why. If approved, submit the invoice at http://submit-invoice.com.",
             # "content": "I have an expense (file expense.txt). Based on the file policies.txt, draft an email to ask for approval if needed. In all cases, submit the expense report on aka.ms/msexpense",
-            "content": "I have an expense (file expense.txt). Based on the file policies.txt, decide if an approval is needed. If so, draft an email to ask for approval. In all cases, submit the expense report at http://localhost:3000/submit",
+            "content": "I have an expense (file expense.txt). Based on the file policies.txt, decide if an approval is needed. If so, draft an email to ask for approval. In all cases, submit the expense report at http://localhost:3000/submit and add the expense id in the email draft.",
         }
         result = await conductor.run_async(messages = [user_message])
 

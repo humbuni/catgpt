@@ -22,8 +22,6 @@ from agents import (
 
 class ComputerUseAgent(BaseAgent):
     def __init__(self, name: str):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        samples_dir = os.path.join(current_dir, "agent-files")
         self.computer = LocalPlaywrightComputer()
         super().__init__(
             name=name,
@@ -84,6 +82,7 @@ class LocalPlaywrightComputer(AsyncComputer):
         browser = await self.playwright.chromium.launch(headless=False, args=launch_args)
         page = await browser.new_page()
         await page.set_viewport_size({"width": width, "height": height})
+        # await page.goto("http://bing.com")
         await page.goto("http://localhost:3000/submit")
         return browser, page
 
@@ -167,3 +166,15 @@ class LocalPlaywrightComputer(AsyncComputer):
         for px, py in path[1:]:
             await self.page.mouse.move(px, py)
         await self.page.mouse.up()
+
+
+async def main():
+    with trace(workflow_name="test_workflow"):
+
+        result: RunResult = None
+        async with ComputerUseAgent(name = "cua") as agent:
+            result = await agent.execute("search for msft stock price")
+            print(f"Agent Result: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useId } from "react";
 import ReactMarkdown from "react-markdown";
-import { Message, chat, FlowResponse, run } from "./api";
+import { Message, chat, FlowResponse, run, FlowExecutionResult } from "./api";
 
 // Renderer for a linear flow of agents
-function FlowRenderer({ flow }: { flow: FlowResponse | null }) {
+function FlowRenderer({ flow, result }: { flow: FlowResponse | null , result: FlowExecutionResult | null }) {
   const uniquePrefix = useId();
   return (
     <div
@@ -14,10 +14,22 @@ function FlowRenderer({ flow }: { flow: FlowResponse | null }) {
         <div key={idx} className="card mb-3">
           <div className="card-header d-flex align-items-center">
             <span className="fw-bold">{agent.name}</span>
-            <span className="badge bg-secondary ms-2">{agent.type}</span>
+            <span className="badge bg-primary ms-2">{agent.type}</span>
             <div className="flex-grow-1" />
-            {agent.result && agent.result.trim() !== "" && (
-              <span className="badge bg-success ms-2">done</span>
+            {result && result.status && result.status[agent.name] && (
+            <span
+              className={`badge ms-2 ${
+                result.status[agent.name] === "completed"
+                  ? "bg-success"
+                  : result.status[agent.name] === "planned"
+                  ? "bg-secondary"
+                  : result.status[agent.name] === "running"
+                  ? "bg-warning text-dark"
+                  : "bg-light text-dark"
+              }`}
+            >
+              {result.status[agent.name]}
+            </span>
             )}
           </div>
           <div className="card-body">
@@ -25,11 +37,11 @@ function FlowRenderer({ flow }: { flow: FlowResponse | null }) {
             <div className="card-text">
               <ReactMarkdown>{agent.instructions}</ReactMarkdown>
             </div>
-            {agent.result && agent.result.trim() !== "" && (
+            {result && result.response && result.response[agent.name] && (
               <>
                 <h6 className="card-title">Result</h6>
                 <div className="card-text mt-2 bg-dark text-light p-2 rounded">
-                  <ReactMarkdown>{agent.result}</ReactMarkdown>
+                  <ReactMarkdown>{result.response[agent.name]}</ReactMarkdown>
                 </div>
               </>
             )}
@@ -135,12 +147,13 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [flow, setFlow] = useState<FlowResponse | null>(null);
+  const [executionResults, setExecutionResults] = useState<FlowExecutionResult | null>(null);
+
   // --- Run button state ---
   const [isRunning, setIsRunning] = useState(false);
 
   async function handleRun() {
-    if(flow)
-    {
+    if(flow) {
       setIsRunning(true);
 
       const response = await run(flow);
@@ -154,11 +167,22 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        buffer = decoder.decode(value, { stream: true });
-        const flowJson = buffer.replace("data: ", "")
-
-        const data = JSON.parse(flowJson) as FlowResponse;
-        setFlow(data)
+        buffer += decoder.decode(value, { stream: true });
+        let eventBoundary = buffer.indexOf("\n\n");
+        while (eventBoundary !== -1) {
+          const eventStr = buffer.slice(0, eventBoundary).trim();
+          buffer = buffer.slice(eventBoundary + 2);
+          if (eventStr.startsWith("data: ")) {
+            const dataJson = eventStr.replace(/^data: /, "");
+            try {
+              const data = JSON.parse(dataJson) as FlowExecutionResult;
+              setExecutionResults(data);
+            } catch (err) {
+              console.error("Failed to parse SSE data:", dataJson, err);
+            }
+          }
+          eventBoundary = buffer.indexOf("\n\n");
+        }
       }
 
       setIsRunning(false);
@@ -192,13 +216,14 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
     <div className="container chat d-flex flex-column flex-grow-1 vh-100">
       <div className="row flex-grow-1 overflow-hidden">
         <div className="col-8 pe-2">
-          <FlowRenderer flow={flow} />
-          {/* Run button and streamed output */}
-          <div className="run-section mt-3">
-            <button className="btn btn-success" onClick={handleRun} disabled={isRunning}>
-              {isRunning ? "Running..." : "Run"}
-            </button>
-          </div>
+          <FlowRenderer flow={flow} result={executionResults}/>
+          {flow && (
+            <div className="run-section mt-3">
+              <button className="btn btn-success" onClick={handleRun} disabled={isRunning}>
+                {isRunning ? "Running..." : "Run"}
+              </button>
+            </div>
+          )}
         </div>
         <div className="col-4 ps-2">
           <ChatMessagesPanel

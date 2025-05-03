@@ -1,4 +1,9 @@
-from agents import Agent, ModelSettings, Runner, TResponseInputItem
+from agents import Agent, ModelSettings, RunResult, Runner, TResponseInputItem
+from pydantic import BaseModel
+
+class AgentExecutionResult(BaseModel):
+    status: dict[str, str] = {}
+    response: dict[str, str] = {}
 
 class BaseAgent:
     def __init__(self, name: str, instructions: str, tools=None, mcp_servers=None, model="gpt-4.1", model_settings: ModelSettings=ModelSettings()):
@@ -23,5 +28,5 @@ class BaseAgent:
     async def __aexit__(self, exc_type, exc_value, traceback):
         pass
 
-    async def execute(self, instruction: str | list[TResponseInputItem]):
+    async def execute(self, instruction: str | list[TResponseInputItem]) -> RunResult:
         return await Runner.run(starting_agent=self.agent, input=instruction, max_turns=100)
