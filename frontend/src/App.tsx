@@ -53,36 +53,6 @@ export default function App() {
 
   return (
     <div className="appContainer">
-      {/* --- sidebar -------------------------------------------------- */}
-      <div className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
-        <button
-          className="collapseBtn"
-          onClick={() => setSidebarOpen((o) => !o)}
-          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-        >
-          {sidebarOpen ? "❮" : "❯"}
-        </button>
-
-        {sidebarOpen && (
-          <>
-            <button className="newChatBtn" onClick={newChat} aria-label="New chat">
-              ➕ New Chat
-            </button>
-            <ul className="sessionList">
-              {sessions.map((s) => (
-                <li
-                  key={s.id}
-                  className={s.id === activeId ? "active" : undefined}
-                  onClick={() => setActiveId(s.id)}
-                >
-                  {sessionTitle(s)}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-
       {/* --- main area ------------------------------------------------- */}
       <div className="main container">
         <h1 className="header">🐱 CatGPT</h1>

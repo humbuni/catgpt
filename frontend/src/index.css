@@ -170,10 +170,6 @@ body {
   z-index: 5;
 }
 
-
-
-
-
 /* ---- Thinking icon ---- */
 .thinking {
   font-size: 1.25rem;
@@ -184,4 +180,10 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 1; }
+}
+
+/* ---- Flow cards ---- */
+.flow-cards {
+  max-height: 90vh;
+  overflow-y: auto;
 }

@@ -27,7 +27,7 @@ class ComputerUseAgent(BaseAgent):
         self.computer = LocalPlaywrightComputer()
         super().__init__(
             name=name,
-            instructions="You are a helpful agent with computer use capabilities.",
+            instructions="You are a helpful agent with computer use capabilities. Do not ask for confirmation to submit a form.",
             tools=[ComputerTool(self.computer)],  # Will be set in __aenter__
             model="computer-use-preview",
             model_settings=ModelSettings(truncation="auto"),

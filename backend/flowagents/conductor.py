@@ -48,6 +48,7 @@ class ConductorAgent:
             "3. 'computeruse': agent capable of using a computer to do any generic task on a computer, such as accessing the web and searching for information, or using any app. If there's a repetitve task, " \
             "4. 'websearch': agent capable of searching the web." \
             "You can have multiple instances of each agent, with specific instructions to help them focus on a particular topic or sub task." \
+            "Keep the result field empty. Instructions for each agent should follow markdown syntax" \
             "Include a friendly message to explained what you've done.",
             # "Output the plan using json. You must return a valid json object. The plan must include the following properties:" \
             # "Output the plan using markdown syntax. The plan must include the following sections:" \

@@ -1,37 +1,38 @@
 import { useEffect, useRef, useState, useId } from "react";
+import ReactMarkdown from "react-markdown";
 import { Message, chat, FlowResponse, run } from "./api";
 
 // Renderer for a linear flow of agents
 function FlowRenderer({ flow }: { flow: FlowResponse | null }) {
   const uniquePrefix = useId();
   return (
-    <div className="accordion" id={`flowAccordion-${uniquePrefix}`}>
+    <div
+      className="flow-cards overflow-auto"
+      id={`flowCards-${uniquePrefix}`}
+    >
       {flow && flow.agents.map((agent, idx) => (
-        <div key={idx} className="accordion-item">
-          <h2 className="accordion-header" id={`heading-${uniquePrefix}-${idx}`}>
-            <button
-              className="accordion-button"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target={`#collapse-${uniquePrefix}-${idx}`}
-              aria-expanded="true"
-              aria-controls={`collapse-${uniquePrefix}-${idx}`}
-            >
-              {agent.name} <span className="badge bg-secondary ms-2">{agent.type}</span>
-            </button>
-          </h2>
-          <div
-            id={`collapse-${uniquePrefix}-${idx}`}
-            className="accordion-collapse collapse"
-            aria-labelledby={`heading-${uniquePrefix}-${idx}`}
-            data-bs-parent={`#flowAccordion-${uniquePrefix}`}
-          >
-            <div className="accordion-body">
-              <h6>Instructions</h6>
-              <p>{agent.instructions}</p>
-              <h6>Result</h6>
-              <p>{agent.result}</p>
+        <div key={idx} className="card mb-3">
+          <div className="card-header d-flex align-items-center">
+            <span className="fw-bold">{agent.name}</span>
+            <span className="badge bg-secondary ms-2">{agent.type}</span>
+            <div className="flex-grow-1" />
+            {agent.result && agent.result.trim() !== "" && (
+              <span className="badge bg-success ms-2">done</span>
+            )}
+          </div>
+          <div className="card-body">
+            <h6 className="card-title">Instructions</h6>
+            <div className="card-text">
+              <ReactMarkdown>{agent.instructions}</ReactMarkdown>
             </div>
+            {agent.result && agent.result.trim() !== "" && (
+              <>
+                <h6 className="card-title">Result</h6>
+                <div className="card-text mt-2 bg-dark text-light p-2 rounded">
+                  <ReactMarkdown>{agent.result}</ReactMarkdown>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ))}
@@ -110,17 +111,20 @@ export function ChatMessagesPanel({ messages, loading, input, setInput, send }: 
                 }
               }}
               placeholder="Ask anything…"
-              rows={2}
+              rows={10}
             />
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={send}
-              disabled={loading}
-            >
-              Send
-            </button>
           </div>
+        </div>
+      </div>
+      <div className="row">
+        <div className="col">
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={send}
+            disabled={loading} >
+           Send
+          </button>
         </div>
       </div>
     </div>
@@ -132,20 +136,13 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   const [loading, setLoading] = useState(false);
   const [flow, setFlow] = useState<FlowResponse | null>(null);
   // --- Run button state ---
-  const [runMessages, setRunMessages] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
   async function handleRun() {
-    // setIsRunning(true);
-    setRunMessages([]);
-    // Example: simulate streamed output
-    // for (const msg of ["Running agent...", "Step 1 complete", "Step 2 complete", "Done!"]) {
-    //   await new Promise((r) => setTimeout(r, 500));
-    //   setRunMessages((prev) => [...prev, msg]);
-    // }
-
     if(flow)
     {
+      setIsRunning(true);
+
       const response = await run(flow);
       if (!response.body) {
         setIsRunning(false);
@@ -201,11 +198,6 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
             <button className="btn btn-success" onClick={handleRun} disabled={isRunning}>
               {isRunning ? "Running..." : "Run"}
             </button>
-            <div className="run-output mt-2 bg-dark text-light p-2 rounded" style={{ minHeight: 40 }}>
-              {runMessages.map((msg, idx) => (
-                <div key={idx} style={{ whiteSpace: "pre-wrap" }}>{msg}</div>
-              ))}
-            </div>
           </div>
         </div>
         <div className="col-4 ps-2">
