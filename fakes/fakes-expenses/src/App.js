@@ -4,18 +4,27 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function SubmitExpense({ onAddExpense }) {
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
+  const [lastId, setLastId] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!desc || !amount) return;
-    onAddExpense({ desc, amount: parseFloat(amount), date: new Date().toLocaleString() });
+    const id = Math.round(10000000*Math.random());
+    onAddExpense({ id, desc, amount: parseFloat(amount), date: new Date().toLocaleString() });
     setDesc('');
     setAmount('');
+    setLastId(id);
   };
 
   return (
     <div className="container mt-4">
       <h2>Submit Expense</h2>
+      <p className="text-muted">Fill out the form below to submit a new expense. All fields are required.</p>
+      {lastId && (
+        <div className="alert alert-success" role="alert">
+          Expense submitted! Expense ID: <strong>{lastId}</strong>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="mb-3">
         <div className="mb-3">
           <label className="form-label">Description</label>
