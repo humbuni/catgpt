@@ -4,15 +4,17 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function SubmitExpense({ onAddExpense }) {
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
+  const [comment, setComment] = useState('');
   const [lastId, setLastId] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!desc || !amount) return;
     const id = Math.round(10000000*Math.random());
-    onAddExpense({ id, desc, amount: parseFloat(amount), date: new Date().toLocaleString() });
+    onAddExpense({ id, desc, amount: parseFloat(amount), date: new Date().toLocaleString(), comment });
     setDesc('');
     setAmount('');
+    setComment('');
     setLastId(id);
   };
 
@@ -34,6 +36,10 @@ function SubmitExpense({ onAddExpense }) {
           <label className="form-label">Amount</label>
           <input type="number" className="form-control" value={amount} onChange={e => setAmount(e.target.value)} />
         </div>
+        <div className="mb-3">
+          <label className="form-label">Comment</label>
+          <input className="form-control" value={comment} onChange={e => setComment(e.target.value)} />
+        </div>
         <button className="btn btn-primary" type="submit">Submit</button>
       </form>
     </div>
@@ -53,6 +59,7 @@ function ViewExpenses({ expenses }) {
               <th>Description</th>
               <th>Amount</th>
               <th>Date</th>
+              <th>Comment</th>
             </tr>
           </thead>
           <tbody>
@@ -61,6 +68,7 @@ function ViewExpenses({ expenses }) {
                 <td>{exp.desc}</td>
                 <td>${exp.amount.toFixed(2)}</td>
                 <td>{exp.date}</td>
+                <td>{exp.comment}</td>
               </tr>
             ))}
           </tbody>
