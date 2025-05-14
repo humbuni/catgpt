@@ -5,12 +5,32 @@ import { Message, chat, FlowResponse, run, FlowExecutionResult } from "./api";
 // Renderer for a linear flow of agents
 function FlowRenderer({ flow, result }: { flow: FlowResponse | null , result: FlowExecutionResult | null }) {
   const uniquePrefix = useId();
+  const [visibleSteps, setVisibleSteps] = useState(0);
+
+  useEffect(() => {
+    if (!flow || !flow.agents.length) {
+      setVisibleSteps(0);
+      return;
+    }
+    setVisibleSteps(1);
+    let step = 1;
+    const interval = setInterval(() => {
+      step++;
+      if (step > flow.agents.length) {
+        clearInterval(interval);
+      } else {
+        setVisibleSteps(step);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [flow]);
+
   return (
     <div
       className="flow-cards overflow-auto"
       id={`flowCards-${uniquePrefix}`}
     >
-      {flow && flow.agents.map((agent, idx) => (
+      {flow && flow.agents.slice(0, visibleSteps).map((agent, idx) => (
         <div key={idx} className="card mb-3">
           <div className="card-header d-flex align-items-center">
             <span className="fw-bold">{agent.name}</span>
@@ -104,12 +124,12 @@ export function ChatMessagesPanel({ messages, loading, input, setInput, send }: 
         {loading && (
           <div key="loading" className="msg assistant">
             <div className="bubble">
-              <span className="thinking">🤔</span>
+              <span className="thinking">Thinking...</span>
             </div>
           </div>
         )}
       </div>
-      <div className="row mt-3">
+      <div className="row mb-3">
         <div className="col">
           <div className="input-group flex-grow-0 align-items-end">
             <textarea
@@ -123,12 +143,12 @@ export function ChatMessagesPanel({ messages, loading, input, setInput, send }: 
                 }
               }}
               placeholder="Ask anything…"
-              rows={10}
+              rows={5}
             />
           </div>
         </div>
       </div>
-      <div className="row">
+      <div className="row mb-3">
         <div className="col">
           <button
             className="btn btn-primary"
@@ -257,17 +277,17 @@ export default function Chat({ sessionId, messages, setMessages }: ChatProps) {
   }
 
   return (
-    <div className="container chat d-flex flex-column flex-grow-1 vh-100">
+    <div className="container-fluid chat d-flex flex-column flex-grow-1 vh-100">
       <div className="row flex-grow-1 overflow-hidden">
         <div className="col-8 pe-2">
-          <FlowRenderer flow={flow} result={executionResults}/>
           {flow && (
-            <div className="run-section mt-3">
+            <div className="run-section mt-3 mb-3">
               <button className="btn btn-success" onClick={handleRun} disabled={isRunning}>
                 {isRunning ? "Running..." : "Run"}
               </button>
             </div>
           )}
+          <FlowRenderer flow={flow} result={executionResults}/>
         </div>
         <div className="col-4 ps-2">
           <ChatMessagesPanel

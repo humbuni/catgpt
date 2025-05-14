@@ -197,6 +197,7 @@ async def run(workflow: AgentWorkflow):
                 async for event in result.stream_events():
                     if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
                         yield f"{event.data.delta}<newline>"
+                        await asyncio.sleep(0.2)
 
                 yield f"::end::<newline>"
 

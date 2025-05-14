@@ -54,7 +54,7 @@ export default function App() {
   return (
     <div className="appContainer">
       {/* --- main area ------------------------------------------------- */}
-      <div className="main container">
+      <div className="main container-fluid">
         <h1 className="header">Agent flow</h1>
         <Chat
           key={activeId}
